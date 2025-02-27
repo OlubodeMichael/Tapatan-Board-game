@@ -260,19 +260,20 @@ const Board = ({ players, onQuit = () => {} }) => {
 
   const handleTouchEnd = async (e, targetRow, targetCol) => {
     e.preventDefault();
+    
+    // Always call these state updates
+    setTouchedPiece(null);
+    setSelectedPiece(null);
+
+    // Early return checks
     if (!touchedPiece) {
-      setTouchedPiece(null);
-      setSelectedPiece(null);
       return;
     }
 
     const sourceRow = touchedPiece.row;
     const sourceCol = touchedPiece.col;
 
-    // Use the same logic as handleDrop
     if (gameOver || board[sourceRow][sourceCol] !== turn) {
-      setTouchedPiece(null);
-      setSelectedPiece(null);
       return;
     }
 
@@ -303,9 +304,6 @@ const Board = ({ players, onQuit = () => {} }) => {
         setTurn(turn === 'red' ? 'blue' : 'red');
       }
     }
-
-    setTouchedPiece(null);
-    setSelectedPiece(null);
   };
 
   if (!gameStarted) {
