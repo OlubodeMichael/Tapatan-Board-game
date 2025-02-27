@@ -4,72 +4,42 @@ import { createEmptyBoard, checkWin } from "../../utils/gameLogic";
 import ColorPicker from "./ColorPicker";
 
 const Board = ({ players, onQuit = () => {} }) => {
-  // All hooks must be at the top level
+  // Move all hooks to the top level
+  const [gameStarted, setGameStarted] = useState(false);
   const [board, setBoard] = useState(createEmptyBoard());
   const [turn, setTurn] = useState('red');
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [winningPieces, setWinningPieces] = useState([]);
-  const [touchedPiece, setTouchedPiece] = useState(null);
   const [scores, setScores] = useState(() => {
+    // Try to load scores from localStorage on initial render
     if (typeof window !== 'undefined') {
       const savedScores = localStorage.getItem('tapatanScores');
-      return savedScores ? JSON.parse(savedScores) : {
-        [players[0].name]: 0,
-        [players[1].name]: 0
-      };
+      if (savedScores) {
+        const parsed = JSON.parse(savedScores);
+        // Match scores to current players
+        return {
+          [players[0].name]: parsed[players[0].name] || 0,
+          [players[1].name]: parsed[players[1].name] || 0
+        };
+      }
     }
+    // Initial scores if no saved data
     return {
       [players[0].name]: 0,
       [players[1].name]: 0
     };
   });
+  const [touchedPiece, setTouchedPiece] = useState(null);
+  const [playerColors, setPlayerColors] = useState({
+    player1: players[0].color,
+    player2: players[1].color
+  });
 
-  // Save scores to localStorage
+  // Save scores whenever they change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('tapatanScores', JSON.stringify(scores));
-    }
+    localStorage.setItem('tapatanScores', JSON.stringify(scores));
   }, [scores]);
-
-  // Helper function to format player name
-  const formatPlayerName = (name) => {
-    return name + (name.endsWith('s') ? "'" : "'s");
-  };
-
-  // Game logic handlers
-  const handleTouchStart = (e, row, col) => {
-    e.preventDefault();
-    if (gameOver || board[row][col] !== turn) return;
-    setTouchedPiece({ row, col });
-    setSelectedPiece({ row, col });
-  };
-
-  const handleWin = (winner) => {
-    setGameOver(true);
-    const winnerName = winner === 'red' ? players[0].name : players[1].name;
-    setScores(prev => ({
-      ...prev,
-      [winnerName]: (prev[winnerName] || 0) + 1
-    }));
-    setTimeout(() => {
-      alert(`${winnerName} wins!`);
-    }, 100);
-  };
-
-  const resetGame = () => {
-    setBoard(createEmptyBoard());
-    setTurn('red');
-    setSelectedPiece(null);
-    setGameOver(false);
-    setWinningPieces([]);
-  };
-
-  const handleQuitGame = () => {
-    if (confirm('Are you sure you want to quit? Current game progress will be lost.')) {
-      onQuit();
-    }
-  };
 
   if (!players || !players[0] || !players[1]) {
     return <div className="text-center text-red-500">Error: Players not set.</div>;
@@ -78,6 +48,14 @@ const Board = ({ players, onQuit = () => {} }) => {
   const [positionHistory, setPositionHistory] = useState([createEmptyBoard()]);
   const [phase, setPhase] = useState('placement');
   const [piecesPlaced, setPiecesPlaced] = useState({ [players[0]?.name]: 0, [players[1]?.name]: 0 });
+
+  const resetGame = () => {
+    setBoard(createEmptyBoard());
+    setTurn('red');
+    setSelectedPiece(null);
+    setGameOver(false);
+    setWinningPieces([]);
+  };
 
   // Get valid moves for a piece
   const getValidMoves = (row, col) => {
@@ -247,14 +225,15 @@ const Board = ({ players, onQuit = () => {} }) => {
         }
         setGameOver(true);
         
-        // Update scores
+        // Update scores using the current player's name
+        const winningPlayer = winner === 'red' ? players[0].name : players[1].name;
         setScores(prevScores => ({
           ...prevScores,
-          [winner]: prevScores[winner] + 1
+          [winningPlayer]: prevScores[winningPlayer] + 1
         }));
         
         await new Promise(resolve => setTimeout(resolve, 500));
-        alert(`${winner.toUpperCase()} wins!`);
+        alert(`${winningPlayer.toUpperCase()} wins!`);
         return;
       }
 
@@ -266,13 +245,21 @@ const Board = ({ players, onQuit = () => {} }) => {
   };
 
   const startGame = () => {
-    if (players[0].color && players[1].color) {
-      setGameOver(true);
+    if (playerColors.player1 && playerColors.player2) {
+      setGameStarted(true);
       setBoard(createEmptyBoard());
     }
   };
 
   // Add touch handlers
+  const handleTouchStart = (e, row, col) => {
+    e.preventDefault();
+    if (gameOver || board[row][col] !== turn) return;
+    
+    setTouchedPiece({ row, col });
+    setSelectedPiece({ row, col });
+  };
+
   const handleTouchMove = (e, row, col) => {
     e.preventDefault();
     if (!touchedPiece) return;
@@ -326,7 +313,7 @@ const Board = ({ players, onQuit = () => {} }) => {
     setSelectedPiece(null);
   };
 
-  if (!gameOver) {
+  if (!gameStarted) {
     return (
       <div className="flex flex-col items-center space-y-8 p-6">
         <h2 className="text-2xl font-bold text-white">Choose Your Colors</h2>
@@ -335,26 +322,18 @@ const Board = ({ players, onQuit = () => {} }) => {
           <div className="space-y-3">
             <label className="block text-white text-lg">{players[0].name}'s Color</label>
             <ColorPicker
-              selectedColor={players[0].color}
-              onColorChange={(color) => {
-                if (players[1].color !== color) {
-                  players[0].color = color;
-                }
-              }}
-              disabledColors={[players[1].color, '#000000']}
+              selectedColor={playerColors.player1}
+              onColorChange={(color) => setPlayerColors(prev => ({ ...prev, player1: color }))}
+              disabledColors={[playerColors.player2, '#000000']}
             />
           </div>
 
           <div className="space-y-3">
             <label className="block text-white text-lg">{players[1].name}'s Color</label>
             <ColorPicker
-              selectedColor={players[1].color}
-              onColorChange={(color) => {
-                if (players[0].color !== color) {
-                  players[1].color = color;
-                }
-              }}
-              disabledColors={[players[0].color, '#000000']}
+              selectedColor={playerColors.player2}
+              onColorChange={(color) => setPlayerColors(prev => ({ ...prev, player2: color }))}
+              disabledColors={[playerColors.player1, '#000000']}
             />
           </div>
 
@@ -371,7 +350,11 @@ const Board = ({ players, onQuit = () => {} }) => {
             <button
               className="flex-1 py-3 px-6 bg-red-500/20 hover:bg-red-500/30 
                        text-white font-bold rounded-lg transition-colors"
-              onClick={handleQuitGame}
+              onClick={() => {
+                if (confirm('Are you sure you want to quit? All progress will be lost.')) {
+                  onQuit(); // Call the onQuit callback
+                }
+              }}
             >
               Quit Game
             </button>
@@ -390,7 +373,12 @@ const Board = ({ players, onQuit = () => {} }) => {
 
   // Update the piece rendering to use selected colors
   const getPieceColor = (piece) => {
-    return piece === 'red' ? players[0].color : players[1].color;
+    return piece === 'red' ? playerColors.player1 : playerColors.player2;
+  };
+
+  // Helper function to format player name in possessive form
+  const formatPlayerName = (name) => {
+    return `${name}'s`;
   };
 
   return (
@@ -521,7 +509,11 @@ const Board = ({ players, onQuit = () => {} }) => {
           <button 
             className="px-6 py-3 text-base bg-red-500/20 hover:bg-red-500/30 
                      text-white font-bold rounded-lg transition-colors touch-manipulation"
-            onClick={handleQuitGame}
+            onClick={() => {
+              if (confirm('Are you sure you want to quit? All progress will be lost.')) {
+                onQuit(); // Call the onQuit callback
+              }
+            }}
           >
             Quit Game
           </button>
