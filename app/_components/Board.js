@@ -11,22 +11,7 @@ const Board = ({ players, onQuit = () => {} }) => {
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [winningPieces, setWinningPieces] = useState([]);
-  const [scores, setScores] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedScores = localStorage.getItem('tapatanScores');
-      if (savedScores) {
-        const parsed = JSON.parse(savedScores);
-        return {
-          [players[0]?.name]: parsed[players[0]?.name] || 0,
-          [players[1]?.name]: parsed[players[1]?.name] || 0
-        };
-      }
-    }
-    return {
-      [players[0]?.name]: 0,
-      [players[1]?.name]: 0
-    };
-  });
+  const [scores, setScores] = useState({});  // Initialize empty first
   const [touchedPiece, setTouchedPiece] = useState(null);
   const [playerColors, setPlayerColors] = useState({
     player1: players[0]?.color,
@@ -39,7 +24,26 @@ const Board = ({ players, onQuit = () => {} }) => {
     [players[1]?.name]: 0 
   });
 
-  // Effect hooks
+  // Move the scores initialization to a useEffect
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedScores = localStorage.getItem('tapatanScores');
+      if (savedScores) {
+        const parsed = JSON.parse(savedScores);
+        setScores({
+          [players[0]?.name]: parsed[players[0]?.name] || 0,
+          [players[1]?.name]: parsed[players[1]?.name] || 0
+        });
+      } else {
+        setScores({
+          [players[0]?.name]: 0,
+          [players[1]?.name]: 0
+        });
+      }
+    }
+  }, [players]); // Add players as dependency
+
+  // Keep the existing localStorage effect
   useEffect(() => {
     localStorage.setItem('tapatanScores', JSON.stringify(scores));
   }, [scores]);
@@ -236,7 +240,7 @@ const Board = ({ players, onQuit = () => {} }) => {
     }
   };
 
-  // Add touch handlers
+  // Update touch handlers
   const handleTouchStart = (e, row, col) => {
     e.preventDefault();
     if (gameOver || board[row][col] !== turn) return;
@@ -251,10 +255,26 @@ const Board = ({ players, onQuit = () => {} }) => {
 
     const touch = e.touches[0];
     const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+    
+    // Remove highlight from all drop targets first
+    document.querySelectorAll('.drop-target').forEach(el => {
+      el.classList.remove('bg-white/20');
+    });
+
+    // Find valid drop target under touch point
     const dropTarget = elements.find(el => el.classList.contains('drop-target'));
     
     if (dropTarget) {
-      dropTarget.classList.add('bg-white/20');
+      const targetPos = dropTarget.getAttribute('data-position');
+      if (targetPos) {
+        const [targetRow, targetCol] = targetPos.split(',').map(Number);
+        const validMoves = getValidMoves(touchedPiece.row, touchedPiece.col);
+        const isValidMove = validMoves.some(([r, c]) => r === targetRow && c === targetCol && board[targetRow][targetCol] === null);
+        
+        if (isValidMove) {
+          dropTarget.classList.add('bg-white/20');
+        }
+      }
     }
   };
 
@@ -379,15 +399,15 @@ const Board = ({ players, onQuit = () => {} }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-between h-[100dvh] py-4">
-      {/* Scoreboard */}
-      <div className="w-full max-w-md px-4 mb-4">
+    <div className="flex flex-col items-center h-[100dvh] max-h-[100dvh] overflow-hidden">
+      {/* Scoreboard - adjust padding to be smaller */}
+      <div className="w-full max-w-md px-4 py-2">
         <div className="bg-white/10 rounded-lg p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <div 
                 className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: players[0]?.color }}
+                style={{ backgroundColor: playerColors.player1 }}
               />
               <div className="text-white">
                 <div className="font-bold">{players[0]?.name}</div>
@@ -404,15 +424,15 @@ const Board = ({ players, onQuit = () => {} }) => {
               </div>
               <div 
                 className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: players[1]?.color }}
+                style={{ backgroundColor: playerColors.player2 }}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Game Status */}
-      <div className="flex flex-col items-center w-full px-4">
+      {/* Game Status - reduce margins */}
+      <div className="flex flex-col items-center w-full px-4 py-1">
         <h2 className="text-xl sm:text-2xl font-bold text-white">
           {gameOver ? "Game Over" : `${formatPlayerName(turn === 'red' ? players[0]?.name : players[1]?.name)} Turn`}
         </h2>
@@ -426,8 +446,8 @@ const Board = ({ players, onQuit = () => {} }) => {
         </div>
       </div>
 
-      {/* Game Board - Centered */}
-      <div className="flex-1 flex items-center justify-center w-full min-h-0">
+      {/* Game Board - make it fill available space */}
+      <div className="flex-1 flex items-center justify-center w-full min-h-0 px-4">
         <div className="relative w-[min(300px,85vw)] h-[min(300px,85vw)]">
           {/* Game board lines */}
           <svg 
@@ -451,7 +471,7 @@ const Board = ({ players, onQuit = () => {} }) => {
           </svg>
 
           {/* Game board intersection points */}
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 select-none touch-none" style={{ WebkitTapHighlightColor: 'transparent', WebkitTouchCallout: 'none' }}>
             {board.map((row, rowIndex) => (
               <div key={rowIndex} className="flex justify-between" 
                    style={{ position: 'absolute', top: `${rowIndex * 50}%`, left: 0, right: 0 }}>
@@ -469,6 +489,7 @@ const Board = ({ players, onQuit = () => {} }) => {
                       className={`w-[min(4rem,20vw)] h-[min(4rem,20vw)] flex justify-center items-center
                         ${!cell && !gameOver ? 'drop-target' : ''}
                         transition-all duration-200`}
+                      data-position={`${rowIndex},${colIndex}`}
                       onDragOver={(e) => handleDragOver(e, rowIndex, colIndex)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, rowIndex, colIndex)}
@@ -501,8 +522,8 @@ const Board = ({ players, onQuit = () => {} }) => {
         </div>
       </div>
 
-      {/* Footer Controls */}
-      <div className="w-full px-4 flex justify-center mt-4">
+      {/* Footer Controls - adjust padding */}
+      <div className="w-full px-4 py-2 flex justify-center">
         <div className="flex space-x-4">
           <button 
             className="px-6 py-3 text-base bg-red-500/20 hover:bg-red-500/30 
