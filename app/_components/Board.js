@@ -12,42 +12,42 @@ const Board = ({ players, onQuit = () => {} }) => {
   const [gameOver, setGameOver] = useState(false);
   const [winningPieces, setWinningPieces] = useState([]);
   const [scores, setScores] = useState(() => {
-    // Try to load scores from localStorage on initial render
     if (typeof window !== 'undefined') {
       const savedScores = localStorage.getItem('tapatanScores');
       if (savedScores) {
         const parsed = JSON.parse(savedScores);
-        // Match scores to current players
         return {
-          [players[0].name]: parsed[players[0].name] || 0,
-          [players[1].name]: parsed[players[1].name] || 0
+          [players[0]?.name]: parsed[players[0]?.name] || 0,
+          [players[1]?.name]: parsed[players[1]?.name] || 0
         };
       }
     }
-    // Initial scores if no saved data
     return {
-      [players[0].name]: 0,
-      [players[1].name]: 0
+      [players[0]?.name]: 0,
+      [players[1]?.name]: 0
     };
   });
   const [touchedPiece, setTouchedPiece] = useState(null);
   const [playerColors, setPlayerColors] = useState({
-    player1: players[0].color,
-    player2: players[1].color
+    player1: players[0]?.color,
+    player2: players[1]?.color
+  });
+  const [positionHistory, setPositionHistory] = useState([createEmptyBoard()]);
+  const [phase, setPhase] = useState('placement');
+  const [piecesPlaced, setPiecesPlaced] = useState({ 
+    [players[0]?.name]: 0, 
+    [players[1]?.name]: 0 
   });
 
-  // Save scores whenever they change
+  // Effect hooks
   useEffect(() => {
     localStorage.setItem('tapatanScores', JSON.stringify(scores));
   }, [scores]);
 
+  // Error check after all hooks
   if (!players || !players[0] || !players[1]) {
     return <div className="text-center text-red-500">Error: Players not set.</div>;
   }
-
-  const [positionHistory, setPositionHistory] = useState([createEmptyBoard()]);
-  const [phase, setPhase] = useState('placement');
-  const [piecesPlaced, setPiecesPlaced] = useState({ [players[0]?.name]: 0, [players[1]?.name]: 0 });
 
   const resetGame = () => {
     setBoard(createEmptyBoard());
@@ -103,16 +103,16 @@ const Board = ({ players, onQuit = () => {} }) => {
       }
 
       // Check if placement phase is complete
-      if (newPiecesPlaced[players[0].name] === 3 && newPiecesPlaced[players[1].name] === 3) {
+      if (newPiecesPlaced[players[0]?.name] === 3 && newPiecesPlaced[players[1]?.name] === 3) {
         setPhase('movement');
       }
 
-      setTurn(turn === players[0].name ? players[1].name : players[0].name);
+      setTurn(turn === players[0]?.name ? players[1]?.name : players[0]?.name);
     } 
     // Movement Phase
     else {
-      const currentPlayer = turn === players[0].name ? players[0] : players[1];
-      const currentColor = currentPlayer.color;
+      const currentPlayer = turn === players[0]?.name ? players[0] : players[1];
+      const currentColor = currentPlayer?.color;
 
       if (!selectedPiece) {
         // Select a piece to move (must be player's own color)
@@ -146,7 +146,7 @@ const Board = ({ players, onQuit = () => {} }) => {
             return;
           }
 
-          setTurn(turn === players[0].name ? players[1].name : players[0].name);
+          setTurn(turn === players[0]?.name ? players[1]?.name : players[0]?.name);
         }
         setSelectedPiece(null);
       }
@@ -226,7 +226,7 @@ const Board = ({ players, onQuit = () => {} }) => {
         setGameOver(true);
         
         // Update scores using the current player's name
-        const winningPlayer = winner === 'red' ? players[0].name : players[1].name;
+        const winningPlayer = winner === 'red' ? players[0]?.name : players[1]?.name;
         setScores(prevScores => ({
           ...prevScores,
           [winningPlayer]: prevScores[winningPlayer] + 1
@@ -302,7 +302,7 @@ const Board = ({ players, onQuit = () => {} }) => {
       const winner = checkWin(newBoard);
       if (winner) {
         setGameOver(true);
-        alert(`${winner === 'red' ? players[0].name : players[1].name} wins!`);
+        alert(`${winner === 'red' ? players[0]?.name : players[1]?.name} wins!`);
         return;
       }
 
@@ -320,7 +320,7 @@ const Board = ({ players, onQuit = () => {} }) => {
         
         <div className="w-full max-w-md space-y-6">
           <div className="space-y-3">
-            <label className="block text-white text-lg">{players[0].name}'s Color</label>
+            <label className="block text-white text-lg">{players[0]?.name}'s Color</label>
             <ColorPicker
               selectedColor={playerColors.player1}
               onColorChange={(color) => setPlayerColors(prev => ({ ...prev, player1: color }))}
@@ -329,7 +329,7 @@ const Board = ({ players, onQuit = () => {} }) => {
           </div>
 
           <div className="space-y-3">
-            <label className="block text-white text-lg">{players[1].name}'s Color</label>
+            <label className="block text-white text-lg">{players[1]?.name}'s Color</label>
             <ColorPicker
               selectedColor={playerColors.player2}
               onColorChange={(color) => setPlayerColors(prev => ({ ...prev, player2: color }))}
@@ -338,10 +338,10 @@ const Board = ({ players, onQuit = () => {} }) => {
           </div>
 
           {/* Show current scores if any */}
-          {(scores[players[0].name] > 0 || scores[players[1].name] > 0) && (
+          {(scores[players[0]?.name] > 0 || scores[players[1]?.name] > 0) && (
             <div className="text-white text-center p-3 bg-white/5 rounded-lg">
               <p className="text-lg mb-2">Current Score</p>
-              <p>{players[0].name}: {scores[players[0].name]} - {players[1].name}: {scores[players[1].name]}</p>
+              <p>{players[0]?.name}: {scores[players[0]?.name]} - {players[1]?.name}: {scores[players[1]?.name]}</p>
             </div>
           )}
 
@@ -390,11 +390,11 @@ const Board = ({ players, onQuit = () => {} }) => {
             <div className="flex items-center space-x-3">
               <div 
                 className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: players[0].color }}
+                style={{ backgroundColor: players[0]?.color }}
               />
               <div className="text-white">
-                <div className="font-bold">{players[0].name}</div>
-                <div className="text-2xl">{scores[players[0].name] || 0}</div>
+                <div className="font-bold">{players[0]?.name}</div>
+                <div className="text-2xl">{scores[players[0]?.name] || 0}</div>
               </div>
             </div>
             
@@ -402,12 +402,12 @@ const Board = ({ players, onQuit = () => {} }) => {
             
             <div className="flex items-center space-x-3">
               <div className="text-white text-right">
-                <div className="font-bold">{players[1].name}</div>
-                <div className="text-2xl">{scores[players[1].name] || 0}</div>
+                <div className="font-bold">{players[1]?.name}</div>
+                <div className="text-2xl">{scores[players[1]?.name] || 0}</div>
               </div>
               <div 
                 className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: players[1].color }}
+                style={{ backgroundColor: players[1]?.color }}
               />
             </div>
           </div>
@@ -417,13 +417,13 @@ const Board = ({ players, onQuit = () => {} }) => {
       {/* Game Status */}
       <div className="flex flex-col items-center w-full px-4">
         <h2 className="text-xl sm:text-2xl font-bold text-white">
-          {gameOver ? "Game Over" : `${formatPlayerName(turn === 'red' ? players[0].name : players[1].name)} Turn`}
+          {gameOver ? "Game Over" : `${formatPlayerName(turn === 'red' ? players[0]?.name : players[1]?.name)} Turn`}
         </h2>
         
         <div className="mt-2 text-white text-sm sm:text-base">
           {!gameOver && (
             <p className="text-center">
-              {`${formatPlayerName(turn === 'red' ? players[0].name : players[1].name)} piece to an adjacent empty point`}
+              {`${formatPlayerName(turn === 'red' ? players[0]?.name : players[1]?.name)} piece to an adjacent empty point`}
             </p>
           )}
         </div>
@@ -532,8 +532,8 @@ const Board = ({ players, onQuit = () => {} }) => {
                 onClick={() => {
                   if (confirm('Reset all scores?')) {
                     setScores({
-                      [players[0].name]: 0,
-                      [players[1].name]: 0
+                      [players[0]?.name]: 0,
+                      [players[1]?.name]: 0
                     });
                     resetGame();
                   }
