@@ -4,42 +4,50 @@ import { createEmptyBoard, checkWin } from "../../utils/gameLogic";
 import ColorPicker from "./ColorPicker";
 
 const Board = ({ players, onQuit = () => {} }) => {
+  // Move all hooks to the top level
   const [gameStarted, setGameStarted] = useState(false);
-  const [playerColors, setPlayerColors] = useState({
-    player1: '#EF4444', // Default red
-    player2: '#3B82F6'  // Default blue
+  const [board, setBoard] = useState(createEmptyBoard());
+  const [turn, setTurn] = useState('red');
+  const [selectedPiece, setSelectedPiece] = useState(null);
+  const [gameOver, setGameOver] = useState(false);
+  const [winningPieces, setWinningPieces] = useState([]);
+  const [scores, setScores] = useState(() => {
+    // Try to load scores from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const savedScores = localStorage.getItem('tapatanScores');
+      if (savedScores) {
+        const parsed = JSON.parse(savedScores);
+        // Match scores to current players
+        return {
+          [players[0].name]: parsed[players[0].name] || 0,
+          [players[1].name]: parsed[players[1].name] || 0
+        };
+      }
+    }
+    // Initial scores if no saved data
+    return {
+      [players[0].name]: 0,
+      [players[1].name]: 0
+    };
   });
+  const [touchedPiece, setTouchedPiece] = useState(null);
+  const [playerColors, setPlayerColors] = useState({
+    player1: players[0].color,
+    player2: players[1].color
+  });
+
+  // Save scores whenever they change
+  useEffect(() => {
+    localStorage.setItem('tapatanScores', JSON.stringify(scores));
+  }, [scores]);
 
   if (!players || !players[0] || !players[1]) {
     return <div className="text-center text-red-500">Error: Players not set.</div>;
   }
 
-  const [board, setBoard] = useState(createEmptyBoard());
-  const [turn, setTurn] = useState('red');
-  const [selectedPiece, setSelectedPiece] = useState(null);
-  const [gameOver, setGameOver] = useState(false);
   const [positionHistory, setPositionHistory] = useState([createEmptyBoard()]);
   const [phase, setPhase] = useState('placement');
   const [piecesPlaced, setPiecesPlaced] = useState({ [players[0]?.name]: 0, [players[1]?.name]: 0 });
-  const [winningPieces, setWinningPieces] = useState([]);
-  const [scores, setScores] = useState({
-    red: 0,
-    blue: 0
-  });
-
-  // Add state for touch interactions
-  const [touchedPiece, setTouchedPiece] = useState(null);
-
-  useEffect(() => {
-    const savedScores = localStorage.getItem('tapatanScores');
-    if (savedScores) {
-      setScores(JSON.parse(savedScores));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('tapatanScores', JSON.stringify(scores));
-  }, [scores]);
 
   const resetGame = () => {
     setBoard(createEmptyBoard());
@@ -329,10 +337,10 @@ const Board = ({ players, onQuit = () => {} }) => {
           </div>
 
           {/* Show current scores if any */}
-          {(scores.red > 0 || scores.blue > 0) && (
+          {(scores[players[0].name] > 0 || scores[players[1].name] > 0) && (
             <div className="text-white text-center p-3 bg-white/5 rounded-lg">
               <p className="text-lg mb-2">Current Score</p>
-              <p>{players[0].name}: {scores.red} - {players[1].name}: {scores.blue}</p>
+              <p>{players[0].name}: {scores[players[0].name]} - {players[1].name}: {scores[players[1].name]}</p>
             </div>
           )}
 
@@ -367,132 +375,174 @@ const Board = ({ players, onQuit = () => {} }) => {
     return piece === 'red' ? playerColors.player1 : playerColors.player2;
   };
 
+  // Helper function to format player name in possessive form
+  const formatPlayerName = (name) => {
+    return `${name}'s`;
+  };
+
   return (
-    <div className="flex flex-col items-center">
-      <div className="mb-6 w-full max-w-md">
-        <div className="flex justify-between items-center bg-white/10 rounded-lg p-4 mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-4 h-4 rounded-full" 
-                 style={{ backgroundColor: playerColors.player1 }}></div>
-            <span className="text-white font-bold">{players[0].name}</span>
-            <span className="text-2xl text-white">{scores.red}</span>
-          </div>
-          <div className="text-white font-bold">vs</div>
-          <div className="flex items-center space-x-4">
-            <span className="text-2xl text-white">{scores.blue}</span>
-            <span className="text-white font-bold">{players[1].name}</span>
-            <div className="w-4 h-4 rounded-full" 
-                 style={{ backgroundColor: playerColors.player2 }}></div>
-          </div>
-        </div>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-white">
-        {gameOver ? "Game Over" : `${turn === 'red' ? players[0].name : players[1].name}'s Turn`}
-      </h2>
-      
-      <div className="mb-4 text-white text-sm">
-        {!gameOver && (
-          <p className="text-center px-4">
-            {`${turn === 'red' ? players[0].name : players[1].name}: ${window.innerWidth <= 768 ? 'Tap and drag' : 'Drag'} your piece to an adjacent empty point`}
-          </p>
-        )}
-      </div>
-
-      {/* Responsive board size */}
-      <div className="relative w-[min(300px,80vw)] h-[min(300px,80vw)]">
-        {/* Game board lines */}
-        <svg 
-          className="absolute inset-0 w-full h-full z-0" 
-          viewBox="0 0 300 300" 
-          style={{ strokeWidth: '2', stroke: 'rgba(255,255,255,0.3)' }}
-        >
-          {/* Horizontal lines */}
-          <line x1="0" y1="0" x2="300" y2="0" />
-          <line x1="0" y1="150" x2="300" y2="150" />
-          <line x1="0" y1="300" x2="300" y2="300" />
-          
-          {/* Vertical lines */}
-          <line x1="0" y1="0" x2="0" y2="300" />
-          <line x1="150" y1="0" x2="150" y2="300" />
-          <line x1="300" y1="0" x2="300" y2="300" />
-          
-          {/* Diagonal lines */}
-          <line x1="0" y1="0" x2="300" y2="300" />
-          <line x1="300" y1="0" x2="0" y2="300" />
-        </svg>
-
-        {/* Game board intersection points */}
-        <div className="absolute inset-0">
-          {board.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex justify-between" 
-                 style={{ position: 'absolute', top: `${rowIndex * 50}%`, left: 0, right: 0 }}>
-              {row.map((cell, colIndex) => (
-                <div 
-                  key={`${rowIndex}-${colIndex}`}
-                  className="relative"
-                  style={{ 
-                    position: 'absolute', 
-                    left: `${colIndex * 50}%`,
-                    transform: 'translate(-50%, -50%)'
-                  }}
-                >
-                  <div
-                    className={`w-[min(4rem,20vw)] h-[min(4rem,20vw)] flex justify-center items-center
-                      ${!cell && !gameOver ? 'drop-target' : ''}
-                      transition-all duration-200`}
-                    onDragOver={(e) => handleDragOver(e, rowIndex, colIndex)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, rowIndex, colIndex)}
-                    onTouchEnd={(e) => handleTouchEnd(e, rowIndex, colIndex)}
-                  >
-                    {cell && (
-                      <div 
-                        draggable={!gameOver && cell === turn}
-                        onDragStart={(e) => handleDragStart(e, rowIndex, colIndex)}
-                        onTouchStart={(e) => handleTouchStart(e, rowIndex, colIndex)}
-                        onTouchMove={(e) => handleTouchMove(e, rowIndex, colIndex)}
-                        className={`w-[min(3rem,15vw)] h-[min(3rem,15vw)] rounded-full shadow-lg
-                          ${!gameOver && cell === turn ? 'cursor-move touch-manipulation' : 'cursor-not-allowed'}
-                          transition-all duration-300 ease-in-out
-                          ${!gameOver && cell === turn ? 'hover:scale-105 active:scale-95' : ''}
-                          ${selectedPiece?.row === rowIndex && selectedPiece?.col === colIndex ? 'ring-2 ring-white/50' : ''}`}
-                        style={{ 
-                          backgroundColor: getPieceColor(cell),
-                          opacity: (!gameOver && cell === turn) || touchedPiece?.row === rowIndex && touchedPiece?.col === colIndex ? 1 : 0.7
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
+    <div className="flex flex-col items-center justify-between h-[100dvh] py-4">
+      {/* Scoreboard */}
+      <div className="w-full max-w-md px-4 mb-4">
+        <div className="bg-white/10 rounded-lg p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <div 
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: players[0].color }}
+              />
+              <div className="text-white">
+                <div className="font-bold">{players[0].name}</div>
+                <div className="text-2xl">{scores[players[0].name] || 0}</div>
+              </div>
             </div>
-          ))}
+            
+            <div className="text-white font-bold">VS</div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="text-white text-right">
+                <div className="font-bold">{players[1].name}</div>
+                <div className="text-2xl">{scores[players[1].name] || 0}</div>
+              </div>
+              <div 
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: players[1].color }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Make buttons bigger on mobile */}
-      <div className="mt-8 flex space-x-4">
-        <button 
-          className="px-6 py-3 text-base sm:text-lg bg-red-500/20 hover:bg-red-500/30 
-                     text-white font-bold rounded-lg transition-colors touch-manipulation"
-          onClick={() => {
-            if (confirm('Are you sure you want to quit? All progress will be lost.')) {
-              onQuit(); // Call the onQuit callback
-            }
-          }}
-        >
-          Quit Game
-        </button>
-        {gameOver && (
-          <button 
-            className="px-6 py-3 text-base sm:text-lg bg-white/10 hover:bg-white/20 
-                       text-white font-bold rounded-lg transition-colors touch-manipulation"
-            onClick={resetGame}
+      {/* Game Status */}
+      <div className="flex flex-col items-center w-full px-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">
+          {gameOver ? "Game Over" : `${formatPlayerName(turn === 'red' ? players[0].name : players[1].name)} Turn`}
+        </h2>
+        
+        <div className="mt-2 text-white text-sm sm:text-base">
+          {!gameOver && (
+            <p className="text-center">
+              {`${formatPlayerName(turn === 'red' ? players[0].name : players[1].name)} piece to an adjacent empty point`}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Game Board - Centered */}
+      <div className="flex-1 flex items-center justify-center w-full min-h-0">
+        <div className="relative w-[min(300px,85vw)] h-[min(300px,85vw)]">
+          {/* Game board lines */}
+          <svg 
+            className="absolute inset-0 w-full h-full z-0" 
+            viewBox="0 0 300 300" 
+            style={{ strokeWidth: '2', stroke: 'rgba(255,255,255,0.3)' }}
           >
-            New Game
+            {/* Horizontal lines */}
+            <line x1="0" y1="0" x2="300" y2="0" />
+            <line x1="0" y1="150" x2="300" y2="150" />
+            <line x1="0" y1="300" x2="300" y2="300" />
+            
+            {/* Vertical lines */}
+            <line x1="0" y1="0" x2="0" y2="300" />
+            <line x1="150" y1="0" x2="150" y2="300" />
+            <line x1="300" y1="0" x2="300" y2="300" />
+            
+            {/* Diagonal lines */}
+            <line x1="0" y1="0" x2="300" y2="300" />
+            <line x1="300" y1="0" x2="0" y2="300" />
+          </svg>
+
+          {/* Game board intersection points */}
+          <div className="absolute inset-0">
+            {board.map((row, rowIndex) => (
+              <div key={rowIndex} className="flex justify-between" 
+                   style={{ position: 'absolute', top: `${rowIndex * 50}%`, left: 0, right: 0 }}>
+                {row.map((cell, colIndex) => (
+                  <div 
+                    key={`${rowIndex}-${colIndex}`}
+                    className="relative"
+                    style={{ 
+                      position: 'absolute', 
+                      left: `${colIndex * 50}%`,
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  >
+                    <div
+                      className={`w-[min(4rem,20vw)] h-[min(4rem,20vw)] flex justify-center items-center
+                        ${!cell && !gameOver ? 'drop-target' : ''}
+                        transition-all duration-200`}
+                      onDragOver={(e) => handleDragOver(e, rowIndex, colIndex)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, rowIndex, colIndex)}
+                      onTouchEnd={(e) => handleTouchEnd(e, rowIndex, colIndex)}
+                    >
+                      {cell && (
+                        <div 
+                          draggable={!gameOver && cell === turn}
+                          onDragStart={(e) => handleDragStart(e, rowIndex, colIndex)}
+                          onTouchStart={(e) => handleTouchStart(e, rowIndex, colIndex)}
+                          onTouchMove={(e) => handleTouchMove(e, rowIndex, colIndex)}
+                          className={`w-[min(3rem,15vw)] h-[min(3rem,15vw)] rounded-full shadow-lg
+                            ${!gameOver && cell === turn ? 'cursor-move touch-manipulation' : 'cursor-not-allowed'}
+                            transition-all duration-300 ease-in-out
+                            ${!gameOver && cell === turn ? 'hover:scale-105 active:scale-95' : ''}
+                            ${selectedPiece?.row === rowIndex && selectedPiece?.col === colIndex ? 'ring-2 ring-white/50' : ''}`}
+                          style={{ 
+                            backgroundColor: getPieceColor(cell),
+                            opacity: (!gameOver && cell === turn) || touchedPiece?.row === rowIndex && touchedPiece?.col === colIndex ? 1 : 0.7
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Controls */}
+      <div className="w-full px-4 flex justify-center mt-4">
+        <div className="flex space-x-4">
+          <button 
+            className="px-6 py-3 text-base bg-red-500/20 hover:bg-red-500/30 
+                     text-white font-bold rounded-lg transition-colors touch-manipulation"
+            onClick={() => {
+              if (confirm('Are you sure you want to quit? All progress will be lost.')) {
+                onQuit(); // Call the onQuit callback
+              }
+            }}
+          >
+            Quit Game
           </button>
-        )}
+          {gameOver && (
+            <>
+              <button 
+                className="px-6 py-3 text-base bg-white/10 hover:bg-white/20 
+                         text-white font-bold rounded-lg transition-colors touch-manipulation"
+                onClick={resetGame}
+              >
+                Next Game
+              </button>
+              <button 
+                className="px-6 py-3 text-base bg-white/10 hover:bg-white/20 
+                         text-white font-bold rounded-lg transition-colors touch-manipulation"
+                onClick={() => {
+                  if (confirm('Reset all scores?')) {
+                    setScores({
+                      [players[0].name]: 0,
+                      [players[1].name]: 0
+                    });
+                    resetGame();
+                  }
+                }}
+              >
+                Reset Scores
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
