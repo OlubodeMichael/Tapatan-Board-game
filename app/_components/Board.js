@@ -199,45 +199,30 @@ const Board = ({ players, onQuit = () => {} }) => {
     const isValidMove = validMoves.some(([r, c]) => r === targetRow && c === targetCol && board[targetRow][targetCol] === null);
 
     if (isValidMove) {
-      // Create new board state
       const newBoard = [...board.map(row => [...row])];
       const movingPiece = newBoard[sourceRow][sourceCol];
-      
-      // Clear source position
       newBoard[sourceRow][sourceCol] = null;
-      
-      // Place piece in new position
       newBoard[targetRow][targetCol] = movingPiece;
-      
-      // Update board first
       setBoard(newBoard);
 
-      // Add delay to ensure the piece is visibly in place
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Check for win
       const winner = checkWin(newBoard);
       if (winner) {
-        // Highlight winning pieces before showing alert
         const winningLine = findWinningLine(newBoard);
         if (winningLine) {
           setWinningPieces(winningLine);
         }
         setGameOver(true);
         
-        // Update scores using the current player's name
         const winningPlayer = winner === 'red' ? players[0]?.name : players[1]?.name;
         setScores(prevScores => ({
           ...prevScores,
           [winningPlayer]: prevScores[winningPlayer] + 1
         }));
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
-        alert(`${winningPlayer.toUpperCase()} wins!`);
         return;
       }
 
-      // Switch turns if no win
       setTurn(turn === 'red' ? 'blue' : 'red');
     }
     
@@ -275,7 +260,11 @@ const Board = ({ players, onQuit = () => {} }) => {
 
   const handleTouchEnd = async (e, targetRow, targetCol) => {
     e.preventDefault();
-    if (!touchedPiece) return;
+    if (!touchedPiece) {
+      setTouchedPiece(null);
+      setSelectedPiece(null);
+      return;
+    }
 
     const sourceRow = touchedPiece.row;
     const sourceCol = touchedPiece.col;
@@ -301,12 +290,18 @@ const Board = ({ players, onQuit = () => {} }) => {
 
       const winner = checkWin(newBoard);
       if (winner) {
+        const winningLine = findWinningLine(newBoard);
+        setWinningPieces(winningLine || []);
         setGameOver(true);
-        alert(`${winner === 'red' ? players[0]?.name : players[1]?.name} wins!`);
-        return;
+        
+        const winningPlayer = winner === 'red' ? players[0]?.name : players[1]?.name;
+        setScores(prevScores => ({
+          ...prevScores,
+          [winningPlayer]: prevScores[winningPlayer] + 1
+        }));
+      } else {
+        setTurn(turn === 'red' ? 'blue' : 'red');
       }
-
-      setTurn(turn === 'red' ? 'blue' : 'red');
     }
 
     setTouchedPiece(null);
@@ -352,7 +347,11 @@ const Board = ({ players, onQuit = () => {} }) => {
                        text-white font-bold rounded-lg transition-colors"
               onClick={() => {
                 if (confirm('Are you sure you want to quit? All progress will be lost.')) {
-                  onQuit(); // Call the onQuit callback
+                  setScores({
+                    [players[0]?.name]: 0,
+                    [players[1]?.name]: 0
+                  });
+                  onQuit();
                 }
               }}
             >
@@ -487,7 +486,8 @@ const Board = ({ players, onQuit = () => {} }) => {
                             ${!gameOver && cell === turn ? 'cursor-move touch-manipulation' : 'cursor-not-allowed'}
                             transition-all duration-300 ease-in-out
                             ${!gameOver && cell === turn ? 'hover:scale-105 active:scale-95' : ''}
-                            ${selectedPiece?.row === rowIndex && selectedPiece?.col === colIndex ? 'ring-2 ring-white/50' : ''}`}
+                            ${selectedPiece?.row === rowIndex && selectedPiece?.col === colIndex ? 'ring-2 ring-white/50' : ''}
+                            ${winningPieces.some(([r, c]) => r === rowIndex && c === colIndex) ? 'ring-4 ring-yellow-400' : ''}`}
                           style={{ 
                             backgroundColor: getPieceColor(cell),
                             opacity: (!gameOver && cell === turn) || touchedPiece?.row === rowIndex && touchedPiece?.col === colIndex ? 1 : 0.7
@@ -511,7 +511,11 @@ const Board = ({ players, onQuit = () => {} }) => {
                      text-white font-bold rounded-lg transition-colors touch-manipulation"
             onClick={() => {
               if (confirm('Are you sure you want to quit? All progress will be lost.')) {
-                onQuit(); // Call the onQuit callback
+                setScores({
+                  [players[0]?.name]: 0,
+                  [players[1]?.name]: 0
+                });
+                onQuit();
               }
             }}
           >
