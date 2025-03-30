@@ -1,37 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+<div id="top">
+
+<!-- HEADER STYLE: CLASSIC -->
+<div align="center">
+
+
+# TAPATAN-BOARD-GAME
+
+<em>Engage, strategize, and conquer in every move!</em>
+
+<!-- BADGES -->
+<img src="https://img.shields.io/github/last-commit/OlubodeMichael/Tapatan-Board-game?style=flat&logo=git&logoColor=white&color=0080ff" alt="last-commit">
+<img src="https://img.shields.io/github/languages/top/OlubodeMichael/Tapatan-Board-game?style=flat&color=0080ff" alt="repo-top-language">
+<img src="https://img.shields.io/github/languages/count/OlubodeMichael/Tapatan-Board-game?style=flat&color=0080ff" alt="repo-language-count">
+
+<em>Built with the tools and technologies:</em>
+
+<img src="https://img.shields.io/badge/JSON-000000.svg?style=flat&logo=JSON&logoColor=white" alt="JSON">
+<img src="https://img.shields.io/badge/npm-CB3837.svg?style=flat&logo=npm&logoColor=white" alt="npm">
+<img src="https://img.shields.io/badge/JavaScript-F7DF1E.svg?style=flat&logo=JavaScript&logoColor=black" alt="JavaScript">
+<img src="https://img.shields.io/badge/React-61DAFB.svg?style=flat&logo=React&logoColor=black" alt="React">
+<img src="https://img.shields.io/badge/ESLint-4B32C3.svg?style=flat&logo=ESLint&logoColor=white" alt="ESLint">
+<img src="https://img.shields.io/badge/CSS-663399.svg?style=flat&logo=CSS&logoColor=white" alt="CSS">
+
+</div>
+<br>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Usage](#usage)
+    - [Testing](#testing)
+
+---
+
+## Overview
+
+Tapatan-Board-game is a web-based implementation of the traditional Filipino game, designed to deliver an engaging and interactive experience for users across various devices.
+
+**Why Tapatan-Board-game?**
+
+This project aims to provide a delightful gaming experience while adhering to best practices in software development. The core features include:
+
+- 🎮 **Modern Tech Stack:** Utilizes Next.js and React for a responsive and interactive UI.
+- 🔄 **Game State Management:** Efficiently tracks game state and player interactions, simplifying game logic.
+- ✨ **Dynamic Interaction:** Enhances user engagement through real-time updates and visual feedback.
+- 🎨 **Tailwind CSS Integration:** Streamlines styling with utility-first CSS for a consistent design.
+- 👥 **Player Setup Component:** Simplifies onboarding, ensuring a smooth start to the game.
+- 📦 **Comprehensive Dependency Management:** Ensures consistent environments with `package-lock.json`, reducing library version issues.
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+This project requires the following dependencies:
+
+- **Programming Language:** JavaScript
+- **Package Manager:** Npm
+
+### Installation
+
+Build Tapatan-Board-game from the source and intsall dependencies:
+
+1. **Clone the repository:**
+
+    ```sh
+    ❯ git clone https://github.com/OlubodeMichael/Tapatan-Board-game
+    ```
+
+2. **Navigate to the project directory:**
+
+    ```sh
+    ❯ cd Tapatan-Board-game
+    ```
+
+3. **Install the dependencies:**
+
+**Using [npm](https://www.npmjs.com/):**
+
+```sh
+❯ npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Usage
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Run the project with:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Using [npm](https://www.npmjs.com/):**
 
-## Learn More
+```sh
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Testing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Tapatan-board-game uses the {__test_framework__} test framework. Run the test suite with:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Using [npm](https://www.npmjs.com/):**
 
-## Deploy on Vercel
+```sh
+npm test
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Tapatan-Board-game
+<div align="left"><a href="#top">⬆ Return</a></div>
+
+---
