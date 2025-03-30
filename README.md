@@ -9,9 +9,6 @@
 <em>Engage, strategize, and conquer in every move!</em>
 
 <!-- BADGES -->
-<img src="https://img.shields.io/github/last-commit/OlubodeMichael/Tapatan-Board-game?style=flat&logo=git&logoColor=white&color=0080ff" alt="last-commit">
-<img src="https://img.shields.io/github/languages/top/OlubodeMichael/Tapatan-Board-game?style=flat&color=0080ff" alt="repo-top-language">
-<img src="https://img.shields.io/github/languages/count/OlubodeMichael/Tapatan-Board-game?style=flat&color=0080ff" alt="repo-language-count">
 
 <em>Built with the tools and technologies:</em>
 
